@@ -57,11 +57,11 @@ Update the `Server` value to match your local SQL Server instance, and create th
 ## Getting Started
 
 1. Clone the repository.
-2. Open `LibraryManagement.sln` in Visual Studio.
+2. Open `LibraryManagement.slnx` in Visual Studio.
 3. Update the connection string in `App.WindowsApp/App.config` if needed.
 4. Set `App.WindowsApp` as the startup project (right-click the project → **Set as Startup Project**).
 5. Build and run (F5).
 
 ## License
 
-This project is for educational/personal use. Add a license of your choice if distributing.
+This project is for educational/personal use.
