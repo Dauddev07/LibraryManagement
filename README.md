@@ -12,20 +12,19 @@ A Windows Forms desktop application for managing a library's books, members, boo
 - [Prerequisites](#prerequisites)
 - [Database Setup](#database-setup)
 - [Getting Started](#getting-started)
-- [Screenshots](#screenshots)
 - [License](#license)
 
 ---
 
 ## Features
 
-- **Books** — Add, edit, delete, search, and filter books by category and status (Available, Issued, Lost). Includes stock tracking and a live pie chart of book status distribution.
-- **Members** — Manage member records including name, phone, email, and address. Full CRUD with search support.
-- **Book Issues** — Issue and return books with automatic stock and status updates. Tracks issue status (Issued, Returned, Overdue).
-- **Announcements** — Create and manage library announcements with active/inactive toggling.
-- **Dashboard** — Overview of total books, members, issued/returned/overdue counts, available books, and active announcements at a glance.
-- **Search & Filter** — Text search combined with category and status dropdowns on the Books view.
-- **Status Bar** — Displays the current view name and timestamp, updated on every navigation action.
+- **Books** — Add, edit, view, delete, search, and filter books by category and status (Available, Issued, Lost). Includes stock tracking, a live pie chart of book status distribution, and business-rule validation (e.g. status/stock consistency checks, blocking deletion of books with active issue history).
+- **Members** — Manage member records including name, phone, email, and address. Full CRUD with search support and validation (name length, phone format, email format). Deletion is blocked while a member has unreturned books.
+- **Book Issues** — Issue and return books with automatic stock and status updates. Tracks issue status (Issued, Returned, Overdue), prevents issuing books that are Lost/already Issued/out of stock, and locks a Returned record from being reverted.
+- **Announcements** — Create, edit, delete, and toggle active/inactive library announcements, with an "Active Only" filter.
+- **Dashboard** — Overview of total books, members, issued/returned/overdue counts, available books, and a live feed of active announcements.
+- **Search & Filter** — Text search combined with category/status dropdowns (Books), text search (Members), and status filter (Book Issues).
+- **Status Bar** — Displays the current view name and timestamp in the main window, updated on every navigation action.
 
 ---
 
@@ -46,43 +45,56 @@ A Windows Forms desktop application for managing a library's books, members, boo
 
 ```
 LibraryManagement/
-├── App.Core/                        # Class library — models, contracts, services
-│   ├── Contracts/                   # Service interfaces
-│   │   ├── IBookService.cs
-│   │   ├── IMemberService.cs
-│   │   ├── IBookIssueService.cs
-│   │   └── IAnnouncementService.cs
-│   ├── Models/                      # Domain models
-│   │   ├── Book.cs
-│   │   ├── Member.cs
-│   │   ├── BookIssue.cs
-│   │   └── Announcement.cs
-│   ├── Services/                    # ADO.NET implementations
-│   │   ├── DBBookService.cs
-│   │   ├── DBMemberService.cs
-│   │   ├── DBBookIssueService.cs
-│   │   └── DBAnnouncementService.cs
-│   └── Utilities/                   # Enums
-│       ├── BookCategoryEnum.cs
-│       ├── BookStatusEnum.cs
-│       └── IssueStatusEnum.cs
+├── App.Core/                       # Class library — models, contracts, services
+│   ├── App.Core.csproj
+│   ├── Contracts/
+│   │   IAnnouncementService.cs
+│   │   IBookIssueService.cs
+│   │   IBookService.cs
+│   │   IMemberService.cs
+│   ├── Models/
+│   │   Announcement.cs
+│   │   Book.cs
+│   │   BookIssue.cs
+│   │   Member.cs
+│   ├── Services/
+│   │   DBAnnouncementService.cs
+│   │   DBBookIssueService.cs
+│   │   DBBookService.cs
+│   │   DBMemberService.cs
+│   └── Utilities/
+│       BookCategoryEnum.cs
+│       BookStatusEnum.cs
+│       IssueStatusEnum.cs
 │
-├── App.WindowsApp/                  # WinForms UI application
-│   ├── Forms/                       # Add/Edit dialogs
-│   │   ├── MainForm.cs
-│   │   ├── BookForm.cs
-│   │   ├── MemberForm.cs
-│   │   └── BookIssueForm.cs
-│   ├── Views/                       # Main content views
-│   │   ├── DashboardView.cs
-│   │   ├── BooksView.cs
-│   │   ├── MembersView.cs
-│   │   ├── BookIssuesView.cs
-│   │   └── AnnouncementsView.cs
-│   └── App.config                   # Database connection string
+├── App.WindowsApp/                 # WinForms UI application
+│   ├── App.WindowsApp.csproj
+│   ├── App.config                  # Database connection string
+│   ├── Program.cs                  # Application entry point
+│   ├── Forms/
+│   │   BookForm.cs
+│   │   BookIssueForm.cs
+│   │   BookPicker.cs
+│   │   FormModeEnums.cs
+│   │   MainForm.cs
+│   │   MemberForm.cs
+│   │   MemberPicker.cs
+│   ├── Properties/
+│   │   Resources.resx
+│   ├── Resources/
+│   │   (23 icon PNGs — toolbar/navigation icons)
+│   └── Views/
+│       AnnouncementsView.cs
+│       BookIssuesView.cs
+│       BooksView.cs
+│       DashboardView.cs
+│       MembersView.cs
 │
-└── LibraryManagement.slnx           # Visual Studio solution file
+├── LibraryManagement.slnx          # Visual Studio solution file
+└── README.md
 ```
+
+*Each form/view listed above has a matching `.resx` file alongside it, plus an auto-generated `.Designer.cs` partial class (regenerated automatically by the Visual Studio Forms Designer, containing only `InitializeComponent()` layout code) — both omitted here for readability.*
 
 ---
 
@@ -131,9 +143,10 @@ CREATE TABLE Member (
 CREATE TABLE BookIssue (
     Id         NVARCHAR(20)  PRIMARY KEY,
     BookId     NVARCHAR(20)  NOT NULL REFERENCES Book(Id),
+    BookTitle  NVARCHAR(200) NOT NULL DEFAULT '',
     MemberId   NVARCHAR(20)  NOT NULL REFERENCES Member(Id),
+    MemberName NVARCHAR(200) NOT NULL DEFAULT '',
     IssueDate  DATETIME      NOT NULL,
-    DueDate    DATETIME      NOT NULL,
     ReturnDate DATETIME      NULL,
     Status     NVARCHAR(20)  NOT NULL DEFAULT 'Issued'
 );
