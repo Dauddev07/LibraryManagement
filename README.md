@@ -198,4 +198,4 @@ Common server name values:
 
 ## License
 
-This project is for educational use — COSC-5136 Advanced Programming, Spring 2026.
+This project is for educational use.
